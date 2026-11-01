@@ -18,7 +18,7 @@
 (function () {
     'use strict';
 
-    const VERSION = '2.2.0-qb';
+    const VERSION = '2.2.1-qb';
 
     // ------------------------------------------------------------------
     // Fallback data — only used when the page does not expose ScavengeScreen
@@ -399,7 +399,7 @@
                 templateInputs[t][u] = inp;
                 tr.appendChild(el('td', null, inp));
             });
-            const link = el('a', { href: '#', style: 'cursor:pointer', title: `Hotkey: ${'UIOP'[t]}` }, `Vorlage ${t + 1} anwenden`);
+            const link = el('a', { href: '#', style: 'cursor:pointer', title: `Hotkey: ${'1234'[t]}` }, `Vorlage ${t + 1} anwenden`);
             link.addEventListener('click', (e) => { e.preventDefault(); fillSquad(readUnits(), getTemplates()[t] || {}); });
             tr.appendChild(el('td', { colSpan: 2 }, link));
             tbody.appendChild(tr);
@@ -436,7 +436,7 @@
 
         const btn = el('button', { type: 'button', class: 'btn', style: 'padding:4px 12px;cursor:pointer;' }, 'Berechnen');
         panel.appendChild(btn);
-        panel.appendChild(el('span', { style: 'margin-left:10px;color:#777' }, 'Hotkeys U/I/O/P = Vorlage 1–4 in die Eingabe übernehmen'));
+        panel.appendChild(el('span', { style: 'margin-left:10px;color:#777' }, 'Hotkeys 1/2/3/4 = Vorlage 1–4 in die Eingabe übernehmen'));
         const res = el('div', { id: 'staemme-scav-result', style: 'margin-top:8px;white-space:pre-wrap;font-family:monospace;' });
         panel.appendChild(res);
 
@@ -500,7 +500,7 @@
             document.addEventListener('keydown', (ev) => {
                 if (ev.ctrlKey || ev.altKey || ev.metaKey) return;
                 if (ev.target && /INPUT|TEXTAREA|SELECT/.test(ev.target.tagName)) return;
-                const idx = 'uiop'.indexOf(ev.key);
+                const idx = '1234'.indexOf(ev.key);
                 if (idx < 0) return;
                 fillSquad(readUnits(), getTemplates()[idx] || {});
             });
