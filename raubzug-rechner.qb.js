@@ -1,23 +1,23 @@
 /*
- * Die Stämme DE — Raubzug-Rechner · Schnellleisten-Edition v2.2.4
+ * Die StÃ¤mme DE â€” Raubzug-Rechner Â· Schnellleisten-Edition v2.2.5
  * ----------------------------------------------------------------------------
- * Quickbar-Skript: läuft beim Klick auf den Schnellleisten-Button im Seiten-
+ * Quickbar-Skript: lÃ¤uft beim Klick auf den Schnellleisten-Button im Seiten-
  * kontext (direkter Zugriff auf game_data, ScavengeScreen, jQuery). KEINE
- * UserScript-Kopfzeile, kein Tampermonkey. Sendet nichts — füllt nur die
+ * UserScript-Kopfzeile, kein Tampermonkey. Sendet nichts â€” fÃ¼llt nur die
  * Truppen-Eingaben; losschicken machst du selbst.
  *
- * Einbinden (Premium nötig):  Einstellungen → Schnellleiste → neuer Eintrag,
+ * Einbinden (Premium nÃ¶tig):  Einstellungen â†’ Schnellleiste â†’ neuer Eintrag,
  * als Link:
  *   javascript:$.getScript('https://cdn.jsdelivr.net/gh/DEINUSER/DEINREPO@main/raubzug-rechner.qb.js');void 0;
  *
- * Button öffnen, während der Raubzug-Bildschirm offen ist. Das Panel rechnet
- * sofort automatisch (alle Truppen zuhause, Rohstoffe/Stunde, max. 6 h — änderbar)
- * und füllt die 4 Vorlagen — Hotkeys 1–4 übernehmen sie in die Eingabe.
+ * Button Ã¶ffnen, wÃ¤hrend der Raubzug-Bildschirm offen ist. Das Panel rechnet
+ * sofort automatisch (alle Truppen zuhause, Rohstoffe/Stunde, max. 6 h â€” Ã¤nderbar)
+ * und fÃ¼llt die 4 Vorlagen â€” Hotkeys 1â€“4 Ã¼bernehmen sie in die Eingabe.
  * Ziel / Zeitlimit / Stufen lassen sich jederzeit umstellen (rechnet live neu).
- * Nacht-Modus: „Zurück bis Uhrzeit“ (z. B. 07:00) setzt das Limit bis genau
- * dahin und schaltet auf „pro Lauf“ — maximale Beute, die bis dann zurück ist.
+ * Nacht-Modus: â€žZurÃ¼ck bis Uhrzeitâ€œ (z. B. 07:00) setzt das Limit bis genau
+ * dahin und schaltet auf â€žpro Laufâ€œ â€” maximale Beute, die bis dann zurÃ¼ck ist.
  * Nochmal klicken = Panel aktualisiert sich (liest Truppen & Stufen neu).
- * Mehrfach-Klick ist sicher — es entstehen keine doppelten Panels/Zeilen.
+ * Mehrfach-Klick ist sicher â€” es entstehen keine doppelten Panels/Zeilen.
  */
 
 (function () {
@@ -26,7 +26,7 @@
     const VERSION = '2.2.4-qb';
 
     // ------------------------------------------------------------------
-    // Fallback data — only used when the page does not expose ScavengeScreen
+    // Fallback data â€” only used when the page does not expose ScavengeScreen
     // (all values below are also what the game ships on a standard world).
     // ------------------------------------------------------------------
     const FALLBACK_CARRY = { spear: 25, sword: 15, axe: 10, archer: 10, light: 80, marcher: 50, heavy: 50, knight: 100 };
@@ -35,14 +35,14 @@
         { id: 1, name: 'Faule Sammler', lf: 0.10 },
         { id: 2, name: 'Bescheidene Sammler', lf: 0.25 },
         { id: 3, name: 'Kluge Sammler', lf: 0.50 },
-        { id: 4, name: 'Großartige Sammler', lf: 0.75 },
+        { id: 4, name: 'GroÃŸartige Sammler', lf: 0.75 },
     ].map((t) => Object.assign({ de: 0.45, di: 1800, df: 1 }, t));
     // Which units to hand out first when turning a capacity target into whole troops.
     // Big carriers first keeps the rounding error small; anything not listed is appended by carry.
     const UNIT_PRIORITY = ['light', 'heavy', 'marcher', 'knight', 'spear', 'sword', 'axe', 'archer'];
     const MIN_POP_FALLBACK = 10;
 
-    const TEMPLATE_PREFIX = 'staemme_scav_tpl_';   // unchanged → existing templates keep working
+    const TEMPLATE_PREFIX = 'staemme_scav_tpl_';   // unchanged â†’ existing templates keep working
     const SETTINGS_KEY = 'staemme_scav_settings';
 
     // --- CALC BEGIN --- (pure math, no DOM; identical to the verified userscript block)
@@ -67,14 +67,14 @@
             const byLoot = tiers.map((_, i) => i).sort((a, b) => tiers[b].lf - tiers[a].lf);
 
             if (mode === 'rpr') {
-                // Loot per run is linear in capacity → fill the best tier first, spill over when the time cap binds.
+                // Loot per run is linear in capacity â†’ fill the best tier first, spill over when the time cap binds.
                 let rem = totalCap;
                 const caps = caps0.slice();
                 for (const i of byLoot) { const c = Math.min(rem, maxCap[i]); caps[i] = c; rem -= c; }
                 return caps;
             }
 
-            // Equal-duration split: duration depends on lf·cap only, so cap_i ∝ 1/lf_i (the classic 15:6:3:2).
+            // Equal-duration split: duration depends on lfÂ·cap only, so cap_i âˆ 1/lf_i (the classic 15:6:3:2).
             const invSum = tiers.reduce((s, t) => s + 1 / t.lf, 0);
             let caps = tiers.map((t) => totalCap / invSum / t.lf);
             if (mode === 'equal') {
@@ -82,7 +82,7 @@
                 return caps;
             }
 
-            // 'rph': maximise Σ loot_i / duration_i (each tier re-sent as soon as it returns).
+            // 'rph': maximise Î£ loot_i / duration_i (each tier re-sent as soon as it returns).
             // The objective is concave in the caps, so pairwise moves with a halving step converge to the global optimum.
             const value = (c) => {
                 let s = 0;
@@ -130,7 +130,7 @@
                     if (k > 0) { squads[i][u] = k; left[u] -= k; need -= k * info[u].carry; }
                 }
             }
-            // leftovers (rounding remainders) — never leave troops idle if a run can still take them
+            // leftovers (rounding remainders) â€” never leave troops idle if a run can still take them
             for (const u of priority) {
                 while (left[u] > 0) {
                     let placed = false;
@@ -152,9 +152,9 @@
                     if (target !== null) {
                         for (const u in squads[i]) squads[target][u] = (squads[target][u] || 0) + squads[i][u];
                         squads[i] = {};
-                        notes.push(`Stufe ${tiers[i].id}: nur ${pop} Bevölkerung (< ${minPop}) → Einheiten zu Stufe ${tiers[target].id} verschoben.`);
+                        notes.push(`Stufe ${tiers[i].id}: nur ${pop} BevÃ¶lkerung (< ${minPop}) â†’ Einheiten zu Stufe ${tiers[target].id} verschoben.`);
                     } else {
-                        notes.push(`Stufe ${tiers[i].id}: nur ${pop} Bevölkerung (< ${minPop}) — das Spiel schickt so einen Trupp nicht los.`);
+                        notes.push(`Stufe ${tiers[i].id}: nur ${pop} BevÃ¶lkerung (< ${minPop}) â€” das Spiel schickt so einen Trupp nicht los.`);
                     }
                 }
             }
@@ -177,7 +177,7 @@
     }
 
     // ------------------------------------------------------------------
-    // Page access — everything is read fresh on every "Berechnen" click.
+    // Page access â€” everything is read fresh on every "Berechnen" click.
     // ------------------------------------------------------------------
     const screenObj = () => (window.ScavengeScreen && window.ScavengeScreen.village) ? window.ScavengeScreen : null;
 
@@ -283,6 +283,55 @@
     }
 
     // ------------------------------------------------------------------
+    // Send a squad: select the scavenge option (tier) and press "Start".
+    // ------------------------------------------------------------------
+    function findSendButton(tierId) {
+        const isSend = (el) => el && el.querySelector('a.free_send_button');
+        // 1) Explicit id/option-id attributes (most reliable, when present).
+        for (const o of document.querySelectorAll('#scavenge_screen .scavenge-option, #scavenge_screen .options-container > div')) {
+            const id = o.getAttribute('data-option-id') || o.getAttribute('data-id');
+            if (id === String(tierId)) { const b = o.querySelector('a.free_send_button'); if (b) return b; }
+        }
+        // 2) `.scavenge-option` cards in order (tier N = Nth card).
+        const opts = document.querySelectorAll('#scavenge_screen .scavenge-option');
+        if (opts.length) {
+            const card = opts[tierId - 1];
+            if (card) { const b = card.querySelector('a.free_send_button'); if (b) return b; }
+        }
+        // 3) Any direct children of the options-container that carry a send button, in order.
+        const cards = Array.from(document.querySelectorAll('#scavenge_screen .options-container > div')).filter(isSend);
+        if (cards.length) {
+            const card = cards[tierId - 1];
+            if (card) return card.querySelector('a.free_send_button');
+        }
+        // 4) Last resort: positional nth-child.
+        try {
+            const b = document.querySelector(`#scavenge_screen .options-container > div:nth-child(${tierId}) a.free_send_button`);
+            if (b) return b;
+        } catch (e) { /* ignore */ }
+        return null;
+    }
+
+    function acceptConfirm() {
+        const sels = ['.popup_box_content .btn-confirm-yes', '.btn-confirm-yes', '#popup_box_confirm .btn', '.ui-dialog .btn-confirm-yes'];
+        for (const s of sels) {
+            const b = document.querySelector(s);
+            if (b) { b.click(); return; }
+        }
+    }
+
+    function sendTier(tierId) {
+        const btn = findSendButton(tierId);
+        if (!btn) {
+            msg(`Raubzug-Rechner: Stufe ${tierId} kann nicht gestartet werden (gesperrt oder schon unterwegs).`, true);
+            return false;
+        }
+        btn.click();
+        setTimeout(acceptConfirm, 250);   // accept a confirmation dialog if the game opens one
+        return true;
+    }
+
+    // ------------------------------------------------------------------
     // Persistence
     // ------------------------------------------------------------------
     function villageId() { return (window.game_data && window.game_data.village && window.game_data.village.id) || 0; }
@@ -296,14 +345,14 @@
     // ------------------------------------------------------------------
     const fmtNum = (n) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     function fmtDuration(sec) {
-        if (!(sec > 0)) return '—';
+        if (!(sec > 0)) return 'â€”';
         const d = Math.floor(sec / 86400), h = Math.floor(sec / 3600) % 24, m = Math.floor(sec / 60) % 60, s = Math.floor(sec) % 60;
         const pad = (n) => String(n).padStart(2, '0');
         return (d ? d + 'd ' : '') + `${h}:${pad(m)}:${pad(s)}`;
     }
     function troopText(units, squad) {
         const parts = units.list.filter((u) => squad[u]).map((u) => `${fmtNum(squad[u])} ${units.info[u].name}`);
-        return parts.length ? parts.join(', ') : '—';
+        return parts.length ? parts.join(', ') : 'â€”';
     }
     function statusText(t) {
         switch (t.status) {
@@ -311,7 +360,7 @@
             case 'unlocking': return 'wird freigeschaltet';
             case 'active': case 'pending': {
                 const rem = t.returnTime ? t.returnTime - serverNow() : 0;
-                return 'unterwegs' + (rem > 0 ? `, zurück in ${fmtDuration(rem)}` : '');
+                return 'unterwegs' + (rem > 0 ? `, zurÃ¼ck in ${fmtDuration(rem)}` : '');
             }
             default: return 'frei';
         }
@@ -377,12 +426,12 @@
     async function main() {
         // Quickbar scripts run on demand, so guide the user if they clicked on the wrong screen.
         if (!/[?&]mode=scavenge(&|$)/.test(location.search)) {
-            msg('Raubzug-Rechner: bitte zuerst den Raubzug-Bildschirm öffnen (Versammlungsplatz → Raubzüge), dann erneut klicken.', true);
+            msg('Raubzug-Rechner: bitte zuerst den Raubzug-Bildschirm Ã¶ffnen (Versammlungsplatz â†’ RaubzÃ¼ge), dann erneut klicken.', true);
             return;
         }
         let tbody;
         try { tbody = await waitFor('#scavenge_screen .candidate-squad-widget tbody', 8000); }
-        catch (e) { msg('Raubzug-Rechner: Truppen-Tabelle nicht gefunden — Seite neu laden und erneut versuchen.', true); return; }
+        catch (e) { msg('Raubzug-Rechner: Truppen-Tabelle nicht gefunden â€” Seite neu laden und erneut versuchen.', true); return; }
 
         clearOld();
 
@@ -412,7 +461,7 @@
 
         // ---- calculator panel ----
         const panel = el('div', { id: 'staemme-scav-calc', style: 'margin:10px 0;padding:10px;border:1px solid #c8b98a;background:#f7f3e6;font-size:12px;' });
-        panel.appendChild(el('div', { style: 'font-weight:bold;margin-bottom:6px;' }, `Raubzug-Rechner (Optimierung) · Schnellleiste v${VERSION}`));
+        panel.appendChild(el('div', { style: 'font-weight:bold;margin-bottom:6px;' }, `Raubzug-Rechner (Optimierung) Â· Schnellleiste v${VERSION}`));
 
         const modeLine = el('div', { style: 'margin-bottom:6px;' }, 'Ziel: ');
         const mkRadio = (val, label, title) => {
@@ -420,8 +469,8 @@
             return el('label', { style: 'margin-right:12px;cursor:pointer', title }, r, ' ' + label);
         };
         modeLine.appendChild(mkRadio('rph', 'Rohstoffe/Stunde', 'Maximiert den Dauerertrag, wenn jede Stufe sofort neu losgeschickt wird.'));
-        modeLine.appendChild(mkRadio('rpr', 'Rohstoffe/Lauf', 'Maximiert die Beute eines einzelnen Durchgangs (alles in die beste Stufe, sofern die Zeitgrenze es zulässt).'));
-        modeLine.appendChild(mkRadio('equal', 'Gleiche Dauer', 'Alle Stufen kommen gleichzeitig zurück (klassisches 15:6:3:2), praktisch zum Neu-Schicken in einem Rutsch.'));
+        modeLine.appendChild(mkRadio('rpr', 'Rohstoffe/Lauf', 'Maximiert die Beute eines einzelnen Durchgangs (alles in die beste Stufe, sofern die Zeitgrenze es zulÃ¤sst).'));
+        modeLine.appendChild(mkRadio('equal', 'Gleiche Dauer', 'Alle Stufen kommen gleichzeitig zurÃ¼ck (klassisches 15:6:3:2), praktisch zum Neu-Schicken in einem Rutsch.'));
         panel.appendChild(modeLine);
 
         const inH = el('input', { type: 'number', min: '0', style: 'width:50px', placeholder: 'h', value: '6' });   // opens with a 6 h limit by default (changeable)
@@ -431,8 +480,8 @@
         // "Nacht-Modus": be back by a wall-clock time (e.g. 07:00). While set it overrides the h/m limit above.
         const inUntil = el('input', { type: 'time', style: 'width:90px' });
         const untilNote = el('span', { style: 'margin-left:8px;color:#777' }, '');
-        panel.appendChild(el('div', { style: 'margin-bottom:6px;' }, 'Zurück bis Uhrzeit: ', inUntil, untilNote,
-            el('span', { style: 'margin-left:8px;color:#777' }, '(Nacht-Modus: maximale Beute bis dahin, z. B. 07:00 — leer = aus)')));
+        panel.appendChild(el('div', { style: 'margin-bottom:6px;' }, 'ZurÃ¼ck bis Uhrzeit: ', inUntil, untilNote,
+            el('span', { style: 'margin-left:8px;color:#777' }, '(Nacht-Modus: maximale Beute bis dahin, z. B. 07:00 â€” leer = aus)')));
 
         const tierLine = el('div', { style: 'margin-bottom:8px;' }, 'Stufen: ');
         const tierBoxes = {};   // id -> { box, label, touched }
@@ -447,10 +496,13 @@
 
         const btn = el('button', { type: 'button', class: 'btn', style: 'padding:4px 12px;cursor:pointer;', title: 'Liest die aktuellen Truppen neu ein und rechnet erneut' }, 'Neu berechnen');
         panel.appendChild(btn);
-        panel.appendChild(el('span', { style: 'margin-left:10px;color:#777' }, 'Hotkeys 1/2/3/4 = Vorlage 1–4 in die Eingabe übernehmen'));
-        // plain-language walkthrough — written for whoever is sitting the account
+        panel.appendChild(el('span', { style: 'margin-left:10px;color:#777' }, 'Hotkeys 1/2/3/4 = Vorlage 1â€“4 Ã¼bernehmen + sofort losschicken'));
+        const autoSendBox = el('input', { type: 'checkbox', id: 'staemme-autosend', checked: true });
+        panel.appendChild(el('div', { style: 'margin-top:6px;' },
+            el('label', { style: 'cursor:pointer' }, autoSendBox, ' Auto-Start: Hotkey 1â€“4 schickt sofort los â€” ausschalten = nur in die Eingabe Ã¼bernehmen')));
+        // plain-language walkthrough â€” written for whoever is sitting the account
         panel.appendChild(el('div', { style: 'margin-top:8px;padding:6px 8px;background:#efe6c8;border:1px solid #c8b98a;font-weight:bold;' },
-            'Ablauf:  Taste 1 drücken → bei Stufe 1 auf „Start“ klicken  ·  Taste 2 → Start  ·  Taste 3 → Start  ·  Taste 4 → Start.  Fertig — alle 6 h wiederholen.'));
+            'Ablauf:  Taste 1 drÃ¼cken â†’ Stufe 1 startet automatisch  Â·  Taste 2 â†’ Stufe 2  Â·  Taste 3 â†’ Stufe 3  Â·  Taste 4 â†’ Stufe 4.  Fertig â€” alle 6 h wiederholen.'));
         const res = el('div', { id: 'staemme-scav-result', style: 'margin-top:8px;white-space:pre-wrap;font-family:monospace;' });
         panel.appendChild(res);
 
@@ -472,7 +524,7 @@
                 maxD = Math.max(0, Math.floor((target - now) / 1000) - 60);
                 untilNote.textContent = maxD >= 1800
                     ? `= noch ${fmtDuration(maxD)}`
-                    : `= noch ${fmtDuration(maxD)} — zu kurz, kein Raubzug schafft das (min. 30 min)`;
+                    : `= noch ${fmtDuration(maxD)} â€” zu kurz, kein Raubzug schafft das (min. 30 min)`;
             } else {
                 untilNote.textContent = '';
                 const h = Math.max(0, Number(inH.value) || 0), m = Math.max(0, Number(inM.value) || 0);
@@ -491,15 +543,15 @@
             const lines = [];
             const src = plan.tiers[0] && plan.tiers[0].fromGame ? 'aus dem Spiel gelesen' : 'FALLBACK (Standardwerte)';
             const t0 = plan.tiers[0] || FALLBACK_TIERS[0];
-            lines.push(`Formel ${src}: Dauer = ((100·lf²·Kap²)^${t0.de} + ${t0.di}s) × ${t0.df}` + (u.factor !== 1 ? `  ·  Tragefaktor ${u.factor}` : ''));
-            lines.push(`Modus: ${{ rph: 'Rohstoffe/Stunde', rpr: 'Rohstoffe/Lauf', equal: 'Gleiche Dauer' }[mode]}` + (isFinite(maxD) ? `  ·  max. ${fmtDuration(maxD)} weg` : '') + `  ·  Stufen: ${selectedIds.join(', ') || 'keine'}`);
-            lines.push(`Zuhause: ${troopText(u, plan.avail)}  (Kapazität ${fmtNum(plan.totalCap)})`);
+            lines.push(`Formel ${src}: Dauer = ((100Â·lfÂ²Â·KapÂ²)^${t0.de} + ${t0.di}s) Ã— ${t0.df}` + (u.factor !== 1 ? `  Â·  Tragefaktor ${u.factor}` : ''));
+            lines.push(`Modus: ${{ rph: 'Rohstoffe/Stunde', rpr: 'Rohstoffe/Lauf', equal: 'Gleiche Dauer' }[mode]}` + (isFinite(maxD) ? `  Â·  max. ${fmtDuration(maxD)} weg` : '') + `  Â·  Stufen: ${selectedIds.join(', ') || 'keine'}`);
+            lines.push(`Zuhause: ${troopText(u, plan.avail)}  (KapazitÃ¤t ${fmtNum(plan.totalCap)})`);
             lines.push('');
 
-            if (!plan.totalCap) { res.textContent = lines.concat(['Keine Truppen zuhause — nichts zu berechnen.']).join('\n'); return; }
-            if (!plan.selected.length) { res.textContent = lines.concat(['Keine freie Stufe ausgewählt (alle unterwegs oder gesperrt). Häkchen setzen, um trotzdem für später zu planen.']).join('\n'); return; }
+            if (!plan.totalCap) { res.textContent = lines.concat(['Keine Truppen zuhause â€” nichts zu berechnen.']).join('\n'); return; }
+            if (!plan.selected.length) { res.textContent = lines.concat(['Keine freie Stufe ausgewÃ¤hlt (alle unterwegs oder gesperrt). HÃ¤kchen setzen, um trotzdem fÃ¼r spÃ¤ter zu planen.']).join('\n'); return; }
 
-            // store the plan in the 4 templates (template i ↔ Stufe i+1) and mirror it in the template inputs
+            // store the plan in the 4 templates (template i â†” Stufe i+1) and mirror it in the template inputs
             const store = getTemplates();
             plan.tiers.forEach((t) => {
                 const row = plan.rows.find((r) => r.tier.id === t.id);
@@ -512,12 +564,12 @@
             plan.rows.slice().sort((a, b) => b.tier.id - a.tier.id).forEach((r) => {
                 lines.push(`Stufe ${r.tier.id} ${r.tier.name}`);
                 lines.push(`    Truppen: ${troopText(u, r.squad)}`);
-                if (r.cap > 0) lines.push(`    Kapazität ${fmtNum(r.cap)} · Beute/Lauf ${fmtNum(r.loot)} · Dauer ${fmtDuration(r.dur)} · ${fmtNum(r.rph)} Rohstoffe/Stunde`);
+                if (r.cap > 0) lines.push(`    KapazitÃ¤t ${fmtNum(r.cap)} Â· Beute/Lauf ${fmtNum(r.loot)} Â· Dauer ${fmtDuration(r.dur)} Â· ${fmtNum(r.rph)} Rohstoffe/Stunde`);
                 else lines.push('    (leer)');
             });
             lines.push('');
-            lines.push(`Gesamt: Beute/Lauf ${fmtNum(plan.totals.loot)} · ${fmtNum(plan.totals.rph)} Rohstoffe/Stunde`
-                + (Object.values(plan.leftover).some((x) => x > 0) ? ` · bleibt zuhause: ${troopText(u, plan.leftover)}` : ''));
+            lines.push(`Gesamt: Beute/Lauf ${fmtNum(plan.totals.loot)} Â· ${fmtNum(plan.totals.rph)} Rohstoffe/Stunde`
+                + (Object.values(plan.leftover).some((x) => x > 0) ? ` Â· bleibt zuhause: ${troopText(u, plan.leftover)}` : ''));
             plan.notes.forEach((n) => lines.push('Hinweis: ' + n));
             res.textContent = lines.join('\n');
             console.log('[Raubzug] plan:', plan.rows.map((r) => ({ tier: r.tier.id, squad: r.squad, cap: r.cap, loot: r.loot, dur: r.dur })));
@@ -529,7 +581,7 @@
         inH.addEventListener('change', runCompute);
         inM.addEventListener('change', runCompute);
         inUntil.addEventListener('change', () => {
-            // a wake-up time means one send with no re-sending → "pro Lauf" is the right objective for it
+            // a wake-up time means one send with no re-sending â†’ "pro Lauf" is the right objective for it
             if ((inUntil.value || '').trim()) { const r = panel.querySelector('input[name="staemme-mode"][value="rpr"]'); if (r) r.checked = true; }
             runCompute();
         });
@@ -545,13 +597,21 @@
                 if (ev.target && /INPUT|TEXTAREA|SELECT/.test(ev.target.tagName)) return;
                 const idx = '1234'.indexOf(ev.key);
                 if (idx < 0) return;
-                fillSquad(readUnits(), getTemplates()[idx] || {});
+                const tierId = idx + 1;
+                const units = readUnits();
+                fillSquad(units, getTemplates()[idx] || {});
+                const autoSend = document.getElementById('staemme-autosend');
+                if (autoSend && autoSend.checked) {
+                    if (sendTier(tierId)) msg(`Raubzug-Rechner: Stufe ${tierId} gestartet.`);
+                } else {
+                    msg(`Raubzug-Rechner: Vorlage ${idx + 1} Ã¼bernommen (Stufe ${tierId}) â€” Start musst du selbst klicken.`);
+                }
             });
         }
 
         msg(`Raubzug-Rechner v${VERSION} bereit.`);
-        console.log(`[Raubzug ${VERSION}] ready — inline calculator + 4 templates added.`);
+        console.log(`[Raubzug ${VERSION}] ready â€” inline calculator + 4 templates added.`);
     }
 
-    main().catch((err) => { console.error('[Raubzug] fatal:', err); msg('Raubzug-Rechner: Fehler — siehe Konsole (F12).', true); });
+    main().catch((err) => { console.error('[Raubzug] fatal:', err); msg('Raubzug-Rechner: Fehler â€” siehe Konsole (F12).', true); });
 })();
