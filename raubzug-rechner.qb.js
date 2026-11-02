@@ -1,5 +1,5 @@
 /*
- * Die Stämme DE — Raubzug-Rechner · Schnellleisten-Edition v2.2.0
+ * Die Stämme DE — Raubzug-Rechner · Schnellleisten-Edition v2.2.2
  * ----------------------------------------------------------------------------
  * Quickbar-Skript: läuft beim Klick auf den Schnellleisten-Button im Seiten-
  * kontext (direkter Zugriff auf game_data, ScavengeScreen, jQuery). KEINE
@@ -10,15 +10,18 @@
  * als Link:
  *   javascript:$.getScript('https://cdn.jsdelivr.net/gh/DEINUSER/DEINREPO@main/raubzug-rechner.qb.js');void 0;
  *
- * Button öffnen, während der Raubzug-Bildschirm offen ist. Nochmal klicken =
- * Panel aktualisiert sich (liest Truppen & Stufen neu).
+ * Button öffnen, während der Raubzug-Bildschirm offen ist. Das Panel rechnet
+ * sofort automatisch (alle Truppen zuhause, Rohstoffe/Stunde, ohne Zeitlimit)
+ * und füllt die 4 Vorlagen — Hotkeys 1–4 übernehmen sie in die Eingabe.
+ * Ziel / Zeitlimit / Stufen lassen sich jederzeit umstellen (rechnet live neu).
+ * Nochmal klicken = Panel aktualisiert sich (liest Truppen & Stufen neu).
  * Mehrfach-Klick ist sicher — es entstehen keine doppelten Panels/Zeilen.
  */
 
 (function () {
     'use strict';
 
-    const VERSION = '2.2.1-qb';
+    const VERSION = '2.2.2-qb';
 
     // ------------------------------------------------------------------
     // Fallback data — only used when the page does not expose ScavengeScreen
@@ -411,7 +414,7 @@
 
         const modeLine = el('div', { style: 'margin-bottom:6px;' }, 'Ziel: ');
         const mkRadio = (val, label, title) => {
-            const r = el('input', { type: 'radio', name: 'staemme-mode', value: val, checked: (settings.mode || 'rph') === val });
+            const r = el('input', { type: 'radio', name: 'staemme-mode', value: val, checked: val === 'rph' });   // always open on Rohstoffe/Stunde
             return el('label', { style: 'margin-right:12px;cursor:pointer', title }, r, ' ' + label);
         };
         modeLine.appendChild(mkRadio('rph', 'Rohstoffe/Stunde', 'Maximiert den Dauerertrag, wenn jede Stufe sofort neu losgeschickt wird.'));
@@ -419,8 +422,8 @@
         modeLine.appendChild(mkRadio('equal', 'Gleiche Dauer', 'Alle Stufen kommen gleichzeitig zurück (klassisches 15:6:3:2), praktisch zum Neu-Schicken in einem Rutsch.'));
         panel.appendChild(modeLine);
 
-        const inH = el('input', { type: 'number', min: '0', style: 'width:50px', placeholder: 'h', value: settings.h || '' });
-        const inM = el('input', { type: 'number', min: '0', max: '59', style: 'width:50px', placeholder: 'm', value: settings.m || '' });
+        const inH = el('input', { type: 'number', min: '0', style: 'width:50px', placeholder: 'h', value: '' });   // always open unlimited → all troops go out
+        const inM = el('input', { type: 'number', min: '0', max: '59', style: 'width:50px', placeholder: 'm', value: '' });
         panel.appendChild(el('div', { style: 'margin-bottom:6px;' }, 'Max. Zeit weg: ', inH, ' h ', inM, ' m  (leer = unbegrenzt)'));
 
         const tierLine = el('div', { style: 'margin-bottom:8px;' }, 'Stufen: ');
@@ -428,13 +431,13 @@
         tiers.forEach((t) => {
             const box = el('input', { type: 'checkbox', checked: isIdle(t) });
             const lab = el('label', { style: 'margin-right:12px;cursor:pointer' }, box, ` ${t.id} ${t.name} `, el('span', { style: 'color:#777' }, `(${statusText(t)})`));
-            box.addEventListener('change', () => { tierBoxes[t.id].touched = true; });
+            box.addEventListener('change', () => { tierBoxes[t.id].touched = true; runCompute(); });
             tierBoxes[t.id] = { box, label: lab.lastChild, touched: false };
             tierLine.appendChild(lab);
         });
         panel.appendChild(tierLine);
 
-        const btn = el('button', { type: 'button', class: 'btn', style: 'padding:4px 12px;cursor:pointer;' }, 'Berechnen');
+        const btn = el('button', { type: 'button', class: 'btn', style: 'padding:4px 12px;cursor:pointer;', title: 'Liest die aktuellen Truppen neu ein und rechnet erneut' }, 'Neu berechnen');
         panel.appendChild(btn);
         panel.appendChild(el('span', { style: 'margin-left:10px;color:#777' }, 'Hotkeys 1/2/3/4 = Vorlage 1–4 in die Eingabe übernehmen'));
         const res = el('div', { id: 'staemme-scav-result', style: 'margin-top:8px;white-space:pre-wrap;font-family:monospace;' });
@@ -444,8 +447,8 @@
         if (container && container.parentNode) container.parentNode.insertBefore(panel, container.nextSibling);
         else document.getElementById('scavenge_screen').appendChild(panel);
 
-        // ---- compute ----
-        btn.addEventListener('click', () => {
+        // ---- compute (auto-runs on open; re-runs live on any control change, or via the button) ----
+        function runCompute() {
             const mode = (panel.querySelector('input[name="staemme-mode"]:checked') || {}).value || 'rph';
             const h = Math.max(0, Number(inH.value) || 0), m = Math.max(0, Number(inM.value) || 0);
             const maxSec = (h * 60 + m) * 60;
@@ -492,7 +495,16 @@
             plan.notes.forEach((n) => lines.push('Hinweis: ' + n));
             res.textContent = lines.join('\n');
             console.log('[Raubzug] plan:', plan.rows.map((r) => ({ tier: r.tier.id, squad: r.squad, cap: r.cap, loot: r.loot, dur: r.dur })));
-        });
+        }
+
+        // live: any change to mode / time / tiers recomputes; the button re-reads current troops and recomputes
+        btn.addEventListener('click', runCompute);
+        panel.querySelectorAll('input[name="staemme-mode"]').forEach((r) => r.addEventListener('change', runCompute));
+        inH.addEventListener('change', runCompute);
+        inM.addEventListener('change', runCompute);
+
+        // auto-load on open: all troops at home, Rohstoffe/Stunde, no time limit, all free tiers
+        runCompute();
 
         // ---- hotkeys (bind once per page load, even across repeated quickbar clicks) ----
         if (!window.__staemmeScavHotkeys) {
