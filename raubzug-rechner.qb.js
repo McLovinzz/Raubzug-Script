@@ -1,5 +1,5 @@
 /*
- * Die Stämme DE — Raubzug-Rechner · Schnellleisten-Edition v2.2.3
+ * Die Stämme DE — Raubzug-Rechner · Schnellleisten-Edition v2.2.4
  * ----------------------------------------------------------------------------
  * Quickbar-Skript: läuft beim Klick auf den Schnellleisten-Button im Seiten-
  * kontext (direkter Zugriff auf game_data, ScavengeScreen, jQuery). KEINE
@@ -14,6 +14,8 @@
  * sofort automatisch (alle Truppen zuhause, Rohstoffe/Stunde, max. 6 h — änderbar)
  * und füllt die 4 Vorlagen — Hotkeys 1–4 übernehmen sie in die Eingabe.
  * Ziel / Zeitlimit / Stufen lassen sich jederzeit umstellen (rechnet live neu).
+ * Nacht-Modus: „Zurück bis Uhrzeit“ (z. B. 07:00) setzt das Limit bis genau
+ * dahin und schaltet auf „pro Lauf“ — maximale Beute, die bis dann zurück ist.
  * Nochmal klicken = Panel aktualisiert sich (liest Truppen & Stufen neu).
  * Mehrfach-Klick ist sicher — es entstehen keine doppelten Panels/Zeilen.
  */
@@ -21,7 +23,7 @@
 (function () {
     'use strict';
 
-    const VERSION = '2.2.3-qb';
+    const VERSION = '2.2.4-qb';
 
     // ------------------------------------------------------------------
     // Fallback data — only used when the page does not expose ScavengeScreen
@@ -426,6 +428,12 @@
         const inM = el('input', { type: 'number', min: '0', max: '59', style: 'width:50px', placeholder: 'm', value: '' });
         panel.appendChild(el('div', { style: 'margin-bottom:6px;' }, 'Max. Zeit weg: ', inH, ' h ', inM, ' m  (leer = unbegrenzt)'));
 
+        // "Nacht-Modus": be back by a wall-clock time (e.g. 07:00). While set it overrides the h/m limit above.
+        const inUntil = el('input', { type: 'time', style: 'width:90px' });
+        const untilNote = el('span', { style: 'margin-left:8px;color:#777' }, '');
+        panel.appendChild(el('div', { style: 'margin-bottom:6px;' }, 'Zurück bis Uhrzeit: ', inUntil, untilNote,
+            el('span', { style: 'margin-left:8px;color:#777' }, '(Nacht-Modus: maximale Beute bis dahin, z. B. 07:00 — leer = aus)')));
+
         const tierLine = el('div', { style: 'margin-bottom:8px;' }, 'Stufen: ');
         const tierBoxes = {};   // id -> { box, label, touched }
         tiers.forEach((t) => {
@@ -453,9 +461,24 @@
         // ---- compute (auto-runs on open; re-runs live on any control change, or via the button) ----
         function runCompute() {
             const mode = (panel.querySelector('input[name="staemme-mode"]:checked') || {}).value || 'rph';
-            const h = Math.max(0, Number(inH.value) || 0), m = Math.max(0, Number(inM.value) || 0);
-            const maxSec = (h * 60 + m) * 60;
-            const maxD = maxSec > 0 ? maxSec : Infinity;
+            let maxD;
+            const untilVal = (inUntil.value || '').trim();
+            if (/^\d{1,2}:\d{2}$/.test(untilVal)) {
+                // Nacht-Modus: limit = time until that clock time (today, or tomorrow if already past), minus a 1-min margin
+                const parts = untilVal.split(':').map(Number);
+                const now = new Date();
+                const target = new Date(now); target.setHours(parts[0], parts[1], 0, 0);
+                if (target <= now) target.setDate(target.getDate() + 1);
+                maxD = Math.max(0, Math.floor((target - now) / 1000) - 60);
+                untilNote.textContent = maxD >= 1800
+                    ? `= noch ${fmtDuration(maxD)}`
+                    : `= noch ${fmtDuration(maxD)} — zu kurz, kein Raubzug schafft das (min. 30 min)`;
+            } else {
+                untilNote.textContent = '';
+                const h = Math.max(0, Number(inH.value) || 0), m = Math.max(0, Number(inM.value) || 0);
+                const maxSec = (h * 60 + m) * 60;
+                maxD = maxSec > 0 ? maxSec : Infinity;
+            }
             saveSettings({ mode, h: inH.value, m: inM.value });
 
             // refresh tier status (squads may have returned since the panel opened); untouched boxes follow the status
@@ -505,6 +528,11 @@
         panel.querySelectorAll('input[name="staemme-mode"]').forEach((r) => r.addEventListener('change', runCompute));
         inH.addEventListener('change', runCompute);
         inM.addEventListener('change', runCompute);
+        inUntil.addEventListener('change', () => {
+            // a wake-up time means one send with no re-sending → "pro Lauf" is the right objective for it
+            if ((inUntil.value || '').trim()) { const r = panel.querySelector('input[name="staemme-mode"][value="rpr"]'); if (r) r.checked = true; }
+            runCompute();
+        });
 
         // auto-load on open: all troops at home, Rohstoffe/Stunde, 6 h limit (changeable), all free tiers
         runCompute();
