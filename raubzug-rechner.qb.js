@@ -1,5 +1,5 @@
 /*
- * Die Stämme DE — Raubzug-Rechner · Schnellleisten-Edition v2.2.2
+ * Die Stämme DE — Raubzug-Rechner · Schnellleisten-Edition v2.2.3
  * ----------------------------------------------------------------------------
  * Quickbar-Skript: läuft beim Klick auf den Schnellleisten-Button im Seiten-
  * kontext (direkter Zugriff auf game_data, ScavengeScreen, jQuery). KEINE
@@ -11,7 +11,7 @@
  *   javascript:$.getScript('https://cdn.jsdelivr.net/gh/DEINUSER/DEINREPO@main/raubzug-rechner.qb.js');void 0;
  *
  * Button öffnen, während der Raubzug-Bildschirm offen ist. Das Panel rechnet
- * sofort automatisch (alle Truppen zuhause, Rohstoffe/Stunde, ohne Zeitlimit)
+ * sofort automatisch (alle Truppen zuhause, Rohstoffe/Stunde, max. 6 h — änderbar)
  * und füllt die 4 Vorlagen — Hotkeys 1–4 übernehmen sie in die Eingabe.
  * Ziel / Zeitlimit / Stufen lassen sich jederzeit umstellen (rechnet live neu).
  * Nochmal klicken = Panel aktualisiert sich (liest Truppen & Stufen neu).
@@ -21,7 +21,7 @@
 (function () {
     'use strict';
 
-    const VERSION = '2.2.2-qb';
+    const VERSION = '2.2.3-qb';
 
     // ------------------------------------------------------------------
     // Fallback data — only used when the page does not expose ScavengeScreen
@@ -422,7 +422,7 @@
         modeLine.appendChild(mkRadio('equal', 'Gleiche Dauer', 'Alle Stufen kommen gleichzeitig zurück (klassisches 15:6:3:2), praktisch zum Neu-Schicken in einem Rutsch.'));
         panel.appendChild(modeLine);
 
-        const inH = el('input', { type: 'number', min: '0', style: 'width:50px', placeholder: 'h', value: '' });   // always open unlimited → all troops go out
+        const inH = el('input', { type: 'number', min: '0', style: 'width:50px', placeholder: 'h', value: '6' });   // opens with a 6 h limit by default (changeable)
         const inM = el('input', { type: 'number', min: '0', max: '59', style: 'width:50px', placeholder: 'm', value: '' });
         panel.appendChild(el('div', { style: 'margin-bottom:6px;' }, 'Max. Zeit weg: ', inH, ' h ', inM, ' m  (leer = unbegrenzt)'));
 
@@ -440,6 +440,9 @@
         const btn = el('button', { type: 'button', class: 'btn', style: 'padding:4px 12px;cursor:pointer;', title: 'Liest die aktuellen Truppen neu ein und rechnet erneut' }, 'Neu berechnen');
         panel.appendChild(btn);
         panel.appendChild(el('span', { style: 'margin-left:10px;color:#777' }, 'Hotkeys 1/2/3/4 = Vorlage 1–4 in die Eingabe übernehmen'));
+        // plain-language walkthrough — written for whoever is sitting the account
+        panel.appendChild(el('div', { style: 'margin-top:8px;padding:6px 8px;background:#efe6c8;border:1px solid #c8b98a;font-weight:bold;' },
+            'Ablauf:  Taste 1 drücken → bei Stufe 1 auf „Start“ klicken  ·  Taste 2 → Start  ·  Taste 3 → Start  ·  Taste 4 → Start.  Fertig — alle 6 h wiederholen.'));
         const res = el('div', { id: 'staemme-scav-result', style: 'margin-top:8px;white-space:pre-wrap;font-family:monospace;' });
         panel.appendChild(res);
 
@@ -503,7 +506,7 @@
         inH.addEventListener('change', runCompute);
         inM.addEventListener('change', runCompute);
 
-        // auto-load on open: all troops at home, Rohstoffe/Stunde, no time limit, all free tiers
+        // auto-load on open: all troops at home, Rohstoffe/Stunde, 6 h limit (changeable), all free tiers
         runCompute();
 
         // ---- hotkeys (bind once per page load, even across repeated quickbar clicks) ----
