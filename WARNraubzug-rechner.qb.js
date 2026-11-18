@@ -473,7 +473,7 @@
         modeLine.appendChild(mkRadio('equal', 'Gleiche Dauer', 'Alle Stufen kommen gleichzeitig zurÃ¼ck (klassisches 15:6:3:2), praktisch zum Neu-Schicken in einem Rutsch.'));
         panel.appendChild(modeLine);
 
-        const inH = el('input', { type: 'number', min: '0', style: 'width:50px', placeholder: 'h', value: '6' });   // opens with a 6 h limit by default (changeable)
+        const inH = el('input', { type: 'number', min: '0', style: 'width:50px', placeholder: 'h', value: '8' });   // opens with a 6 h limit by default (changeable)
         const inM = el('input', { type: 'number', min: '0', max: '59', style: 'width:50px', placeholder: 'm', value: '' });
         panel.appendChild(el('div', { style: 'margin-bottom:6px;' }, 'Max. Zeit weg: ', inH, ' h ', inM, ' m  (leer = unbegrenzt)'));
 
@@ -502,7 +502,7 @@
             el('label', { style: 'cursor:pointer' }, autoSendBox, ' Auto-Start: Hotkey 1â€“4 schickt sofort los â€” ausschalten = nur in die Eingabe Ã¼bernehmen')));
         // plain-language walkthrough â€” written for whoever is sitting the account
         panel.appendChild(el('div', { style: 'margin-top:8px;padding:6px 8px;background:#efe6c8;border:1px solid #c8b98a;font-weight:bold;' },
-            'Ablauf:  Taste 1 drÃ¼cken â†’ Stufe 1 startet automatisch  Â·  Taste 2 â†’ Stufe 2  Â·  Taste 3 â†’ Stufe 3  Â·  Taste 4 â†’ Stufe 4.  Fertig â€” alle 6 h wiederholen.'));
+            'Ablauf:  Taste 1 ’ Stufe 1 startet automatisch  ·  Taste 2 ’ Stufe 2  ·  Taste 3 ’ Stufe 3  ·  Taste 4’ Stufe 4.  Fertig ” alle 8 h wiederholen.'));
         const res = el('div', { id: 'staemme-scav-result', style: 'margin-top:8px;white-space:pre-wrap;font-family:monospace;' });
         panel.appendChild(res);
 
